@@ -31,7 +31,7 @@ class LidarPerception(Node):
         )
 
         # publish lidar detections
-        self.publisher_pc = self.create_publisher(
+        self.publisher_dets = self.create_publisher(
             Detection3DArray,
             "detections_3d",
             qos_profile=qos,
@@ -40,8 +40,8 @@ class LidarPerception(Node):
     def pc_callback(self, pc_msg: LidarMsg) -> Detection3DArray:
         pc_avstack = LidarSensorBridge.pc2_to_avstack(pc_msg)
         dets_avstack = self.model(pc_avstack)
-        dets_ros = DetectionBridge.avstack_to_detections_3d(dets_avstack, header=pc_msg.header)
-        self.publisher_pc.publish(dets_ros)
+        dets_ros = DetectionBridge.avstack_to_detectionarray(dets_avstack, header=pc_msg.header)
+        self.publisher_dets.publish(dets_ros)
 
 
 def main(args=None):

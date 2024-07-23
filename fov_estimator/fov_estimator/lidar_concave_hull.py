@@ -1,7 +1,9 @@
 import rclpy
 from rclpy.node import Node
 
+from geometry_msgs.msg import PolygonStamped
 from sensor_msgs.msg import PointCloud2 as LidarMsg
+from avstack_bridge.geometry import GeometryBridge
 from avstack_bridge.sensors import LidarSensorBridge
 
 from avstack.modules.perception.fov_estimator import ConcaveHullLidarFOVEstimator
@@ -28,8 +30,8 @@ class LidarFovEstimator(Node):
         )
 
         # publish fov model as point cloud
-        self.publisher_pc = self.create_publisher(
-            LidarMsg,
+        self.publisher_fov = self.create_publisher(
+            PolygonStamped,
             "fov",
             qos_profile=qos,
         )
@@ -37,8 +39,8 @@ class LidarFovEstimator(Node):
     def pc_callback(self, pc_msg: LidarMsg) -> LidarMsg:
         pc_avstack = LidarSensorBridge.pc2_to_avstack(pc_msg)
         fov_avstack = self.model(pc_avstack)
-        pc_ros = LidarSensorBridge.pc2_to_avstack(fov_avstack)
-        self.publisher_fov.publish(pc_ros)
+        fov_ros = GeometryBridge.avstack_to_polygon(fov_avstack, stamped=True)
+        self.publisher_fov.publish(fov_ros)
 
 
 def main(args=None):
