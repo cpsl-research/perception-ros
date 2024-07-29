@@ -17,12 +17,12 @@ from avstack.modules.perception.object3d import MMDetObjectDetector3D
 class LidarPerception(Node):
     def __init__(self, verbose: bool = False):
         super().__init__("perception")
-        self.declare_parameter("model", "pointpillars")
-        self.declare_parameter("dataset", "carla-vehicle")
+        self.declare_parameter("perception_model", "pointpillars")
+        self.declare_parameter("perception_dataset", "carla-vehicle")
 
         # initialize models
-        param_model = self.get_parameter("model").value
-        param_dataset = self.get_parameter("dataset").value
+        param_model = self.get_parameter("perception_model").value
+        param_dataset = self.get_parameter("perception_dataset").value
         self.model = MMDetObjectDetector3D(
             model=param_model,
             dataset=param_dataset,
