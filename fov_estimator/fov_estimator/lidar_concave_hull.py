@@ -1,17 +1,14 @@
 import rclpy
-from rclpy.node import Node
-from tf2_ros import TransformException
-from tf2_ros.buffer import Buffer
-from tf2_ros.transform_listener import TransformListener
-
-from geometry_msgs.msg import PolygonStamped
-from sensor_msgs.msg import PointCloud2 as LidarMsg
-from avstack_bridge import Bridge
+from avstack.modules.perception.fov_estimator import ConcaveHullLidarFOVEstimator
 from avstack_bridge.geometry import GeometryBridge
 from avstack_bridge.sensors import LidarSensorBridge
 from avstack_bridge.transform import do_transform_cloud
-
-from avstack.modules.perception.fov_estimator import ConcaveHullLidarFOVEstimator
+from geometry_msgs.msg import PolygonStamped
+from rclpy.node import Node
+from sensor_msgs.msg import PointCloud2 as LidarMsg
+from tf2_ros import TransformException
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
 
 
 class LidarFovEstimator(Node):
@@ -23,7 +20,7 @@ class LidarFovEstimator(Node):
             history=rclpy.qos.QoSHistoryPolicy.KEEP_LAST,
             depth=10,
             reliability=rclpy.qos.QoSReliabilityPolicy.RELIABLE,
-            durability=rclpy.qos.QoSDurabilityPolicy.VOLATILE
+            durability=rclpy.qos.QoSDurabilityPolicy.VOLATILE,
         )
 
         # listen to transform information
@@ -32,10 +29,7 @@ class LidarFovEstimator(Node):
 
         # subscribe to point cloud in the same namespace
         self.subscriber_pc = self.create_subscription(
-            LidarMsg,
-            "point_cloud",
-            self.pc_callback,
-            qos_profile=qos
+            LidarMsg, "point_cloud", self.pc_callback, qos_profile=qos
         )
 
         # publish fov model as point cloud
@@ -47,7 +41,7 @@ class LidarFovEstimator(Node):
 
     def pc_callback(self, pc_msg: LidarMsg) -> LidarMsg:
         """Run the FOV estimation model when we receive lidar data
-        
+
         We need to project the lidar data into either a ground or global
         reference frame to handle perspective angle sensors
         """
@@ -59,7 +53,8 @@ class LidarFovEstimator(Node):
             )
         except TransformException as ex:
             self.get_logger().info(
-                f'Could not transform point cloud for fov estimation')
+                f"Could not transform point cloud for fov estimation"
+            )
             return
         pc_msg_global = do_transform_cloud(pc_msg, tf_world_lidar)
         pc_avstack = LidarSensorBridge.pc2_to_avstack(pc_msg_global)
