@@ -9,6 +9,7 @@ from sensor_msgs.msg import PointCloud2 as LidarMsg
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
+from tf2_geometry_msgs import do_transform_polygon_stamped
 
 
 class LidarFovEstimator(Node):
@@ -51,6 +52,11 @@ class LidarFovEstimator(Node):
                 pc_msg.header.frame_id,
                 pc_msg.header.stamp,
             )
+            # tf_lidar_world = self.tf_buffer.lookup_transform(
+            #     pc_msg.header.frame_id,
+            #     "world",
+            #     pc_msg.header.stamp,
+            # )
         except TransformException as ex:
             self.get_logger().info(
                 f"Could not transform point cloud for fov estimation"
@@ -60,6 +66,7 @@ class LidarFovEstimator(Node):
         pc_avstack = LidarSensorBridge.pc2_to_avstack(pc_msg_global)
         fov_avstack = self.model(pc_avstack)
         fov_ros = GeometryBridge.avstack_to_polygon(fov_avstack, stamped=True)
+        # fov_ros_local = do_transform_polygon_stamped(fov_ros, tf_lidar_world)
         self.publisher_fov.publish(fov_ros)
 
 
