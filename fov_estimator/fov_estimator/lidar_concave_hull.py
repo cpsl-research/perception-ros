@@ -9,7 +9,9 @@ from sensor_msgs.msg import PointCloud2 as LidarMsg
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
-from tf2_geometry_msgs import do_transform_polygon_stamped
+
+
+# from tf2_geometry_msgs import do_transform_polygon_stamped
 
 
 class LidarFovEstimator(Node):
@@ -26,7 +28,7 @@ class LidarFovEstimator(Node):
 
         # listen to transform information
         self.tf_buffer = Buffer()
-        self.tf_listener = TransformListener(self.tf_buffer, self, qos=qos)
+        self.tf_listener = TransformListener(self.tf_buffer, self)
 
         # subscribe to point cloud in the same namespace
         self.subscriber_pc = self.create_subscription(
@@ -47,17 +49,13 @@ class LidarFovEstimator(Node):
         reference frame to handle perspective angle sensors
         """
         try:
+            # transform that takes **points** from source=lidar to target=world
             tf_world_lidar = self.tf_buffer.lookup_transform(
-                "world",
-                pc_msg.header.frame_id,
-                pc_msg.header.stamp,
+                target_frame="world",
+                source_frame=pc_msg.header.frame_id,
+                time=pc_msg.header.stamp,
             )
-            # tf_lidar_world = self.tf_buffer.lookup_transform(
-            #     pc_msg.header.frame_id,
-            #     "world",
-            #     pc_msg.header.stamp,
-            # )
-        except TransformException as ex:
+        except TransformException:
             self.get_logger().info(
                 f"Could not transform point cloud for fov estimation"
             )
@@ -66,7 +64,6 @@ class LidarFovEstimator(Node):
         pc_avstack = LidarSensorBridge.pc2_to_avstack(pc_msg_global)
         fov_avstack = self.model(pc_avstack)
         fov_ros = GeometryBridge.avstack_to_polygon(fov_avstack, stamped=True)
-        # fov_ros_local = do_transform_polygon_stamped(fov_ros, tf_lidar_world)
         self.publisher_fov.publish(fov_ros)
 
 

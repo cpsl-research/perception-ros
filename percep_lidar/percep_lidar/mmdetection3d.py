@@ -38,7 +38,7 @@ class LidarPerception(Node):
 
         # listen to transform information
         self.tf_buffer = Buffer()
-        self.tf_listener = TransformListener(self.tf_buffer, self, qos=qos)
+        self.tf_listener = TransformListener(self.tf_buffer, self)
 
         # subscribe to point cloud in the same namespace
         self.subscriber_pc = self.create_subscription(
@@ -65,15 +65,17 @@ class LidarPerception(Node):
         # HACK: assume the sensor is e.g., agent0/lidar0
         try:
             frame_agent = pc_msg.header.frame_id.split("/")[0]
+            # transform that takes **points** from source=agent to target=world
             tf_world_agent = self.tf_buffer.lookup_transform(
-                "world",
-                frame_agent,
-                pc_msg.header.stamp,
+                target_frame="world",
+                source_frame=frame_agent,
+                time=pc_msg.header.stamp,
             )
+            # transform that takes **points** from source=lidar to target=agent
             tf_agent_lidar = self.tf_buffer.lookup_transform(
-                frame_agent,
-                pc_msg.header.frame_id,
-                pc_msg.header.stamp,
+                target_frame=frame_agent,
+                source_frame=pc_msg.header.frame_id,
+                time=pc_msg.header.stamp,
             )
             ref_agent_world = Bridge.tf2_to_reference(tf_world_agent)
             ref_lidar_agent = Bridge.tf2_to_reference(
